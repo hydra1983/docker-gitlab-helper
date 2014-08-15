@@ -26,3 +26,4 @@ docker rm mysql
 curl -sSL https://github.com/hydra1983/docker-gitlab-helper/raw/master/etc/init.d/docker-gitlab > /etc/init.d/docker-gitlab
 chmod +x /etc/init.d/docker-gitlab
 /etc/init.d/docker-gitlab start
+update-rc.d docker-gitlab defaults
