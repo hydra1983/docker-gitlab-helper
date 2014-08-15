@@ -77,16 +77,26 @@ function stop {
 }
 
 function backup {
+    if mysql_is_stopped; then remove_mysql; fi
+    if ! mysql_is_running; then start_mysql; fi
+
     if gitlab_is_running; then stop_gitlab; fi
     if gitlab_is_stopped; then remove_gitlab; fi
+
     backup_gitlab
+
     if ! gitlab_is_running; then start_gitlab; fi
 }
 
 function restore {
+    if mysql_is_stopped; then remove_mysql; fi
+    if ! mysql_is_running; then start_mysql; fi
+
     if gitlab_is_running; then stop_gitlab; fi
     if gitlab_is_stopped; then remove_gitlab; fi
+
     restore_gitlab
+
     if ! gitlab_is_running; then start_gitlab; fi
 }
 
