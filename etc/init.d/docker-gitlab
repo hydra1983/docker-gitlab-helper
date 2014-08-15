@@ -39,7 +39,7 @@ function remove_mysql {
 function start_gitlab {
     echo "Start Gitlab"
     [ ! -d /opt/gitlab/data ] && mkdir -p /opt/gitlab/data
-    docker run --name=gitlab -d -p $GITLAB_EXPORT_SSH_PORT:22 -p $GITLAB_EXPORT_HTTP_PORT:80 -p $GITLAB_EXPORT_HTTPS_PORT:443 --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$GITLAB_VERSION 1> /dev/null
+    docker run --name=gitlab -d -p $GITLAB_EXPORT_SSH_PORT:22 -p $GITLAB_EXPORT_HTTP_PORT:80 -p $GITLAB_EXPORT_HTTPS_PORT:443 --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$CURRENT_VERSION 1> /dev/null
 }
 
 function stop_gitlab {
