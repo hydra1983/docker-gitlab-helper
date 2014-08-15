@@ -53,11 +53,11 @@ function remove_gitlab {
 }
 
 function backup_gitlab {
-    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$GITLAB_VERSION app:rake gitlab:backup:create
+    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$CURRENT_VERSION app:rake gitlab:backup:create
 }
 
 function restore_gitlab {
-    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$GITLAB_VERSION app:rake gitlab:backup:restore
+    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$CURRENT_VERSION app:rake gitlab:backup:restore
 }
 
 function start {
