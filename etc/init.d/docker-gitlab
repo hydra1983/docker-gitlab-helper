@@ -1,0 +1,115 @@
+#!/bin/bash
+
+source /etc/docker-gitlab/daemon.conf
+
+scriptfile=$(basename $0)
+
+function mysql_is_running {
+    [ "$(docker ps | grep mysql)" != "" ] && return 0 || return 1
+}
+
+function mysql_is_stopped {
+    [ "$(docker ps -a | grep mysql)" != "" ] && return 0 || return 1
+}
+
+function gitlab_is_running {
+    [ "$(docker ps | grep gitlab)" != "" ] && return 0 || return 1
+}
+
+function gitlab_is_stopped {
+    [ "$(docker ps -a | grep gitlab)" != "" ] && return 0 || return 1
+}
+
+function start_mysql {
+    echo "Start MySQL"
+    [ ! -d /opt/mysql/data ] && mkdir -p /opt/mysql/data
+    docker run --name=mysql -d -p $MYSQL_EXPORT_SSH_PORT:22 -p $MYSQL_EXPORT_HTTP_PORT:3306 -v /opt/mysql/data:/var/lib/mysql sameersbn/mysql:latest 1> /dev/null
+}
+
+function stop_mysql {
+    echo "Stop MySQL"
+    docker stop mysql 1> /dev/null
+}
+
+function remove_mysql {
+    echo "Remove MySQL"
+    docker rm mysql 1> /dev/null
+}
+
+function start_gitlab {
+    echo "Start Gitlab"
+    [ ! -d /opt/gitlab/data ] && mkdir -p /opt/gitlab/data
+    docker run --name=gitlab -d -p $GITLAB_EXPORT_SSH_PORT:22 -p $GITLAB_EXPORT_HTTP_PORT:80 -p $GITLAB_EXPORT_HTTPS_PORT:443 --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$GITLAB_VERSION 1> /dev/null
+}
+
+function stop_gitlab {
+    echo "Stop Gitlab"
+    docker stop gitlab 1> /dev/null
+}
+
+function remove_gitlab {
+    echo "Remove Gitlab"
+    docker rm gitlab 1> /dev/null
+}
+
+function backup_gitlab {
+    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$GITLAB_VERSION app:rake gitlab:backup:create
+}
+
+function restore_gitlab {
+    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$GITLAB_VERSION app:rake gitlab:backup:restore
+}
+
+function start {
+    if mysql_is_stopped; then remove_mysql; fi
+    if gitlab_is_stopped; then remove_gitlab; fi
+
+    if ! mysql_is_running; then start_mysql; fi
+    if ! gitlab_is_running; then start_gitlab; fi
+}
+
+function stop {
+    if mysql_is_running; then stop_mysql; fi
+    if gitlab_is_running; then stop_gitlab; fi
+
+    if mysql_is_stopped; then remove_mysql; fi
+    if gitlab_is_stopped; then remove_gitlab; fi
+}
+
+function backup {
+    if gitlab_is_running; then stop_gitlab; fi
+    if gitlab_is_stopped; then remove_gitlab; fi
+    backup_gitlab
+    if ! gitlab_is_running; then start_gitlab; fi
+}
+
+function restore {
+    if gitlab_is_running; then stop_gitlab; fi
+    if gitlab_is_stopped; then remove_gitlab; fi
+    restore_gitlab
+    if ! gitlab_is_running; then start_gitlab; fi
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    backup)
+        backup
+        ;;
+    restore)
+        restore
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $scriptfile {start|stop|restart|backup|restore}"
+        exit 1
+        ;;
+esac
+exit $?
