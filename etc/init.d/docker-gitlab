@@ -69,11 +69,11 @@ function start {
 }
 
 function stop {
-    if mysql_is_running; then stop_mysql; fi
     if gitlab_is_running; then stop_gitlab; fi
+    if mysql_is_running; then stop_mysql; fi
 
-    if mysql_is_stopped; then remove_mysql; fi
     if gitlab_is_stopped; then remove_gitlab; fi
+    if mysql_is_stopped; then remove_mysql; fi
 }
 
 function backup {
