@@ -107,15 +107,15 @@ case "$1" in
     stop)
         stop
         ;;
+    restart)
+        stop
+        start
+        ;;
     backup)
         backup
         ;;
     restore)
         restore
-        ;;
-    restart)
-        stop
-        start
         ;;
     *)
         echo "Usage: $scriptfile {start|stop|restart|backup|restore}"
