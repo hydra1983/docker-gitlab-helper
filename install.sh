@@ -10,7 +10,7 @@ mkdir -p /opt/mysql/data
 mkdir -p /opt/gitlab/data
 
 # Initialise MySQL
-curl -sSL https://github.com/hydra1983/docker-gitlab-helper/blob/master/etc/docker-gitlab/gitlab.conf > /etc/docker-gitlab/gitlab.conf
+curl -sSL https://github.com/hydra1983/docker-gitlab-helper/raw/master/install.sh > /etc/docker-gitlab/gitlab.conf
 source /etc/docker-gitlab/gitlab.conf
 docker run --name=mysql -d -p 3306:3306 -v /opt/mysql/data:/var/lib/mysql sameersbn/mysql:latest
 mysql_ssh_host=`docker inspect mysql | grep IPAddres | awk -F'"' '{print $4}'`
