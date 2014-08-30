@@ -1,6 +1,3 @@
-# Run under root
-sudo su
-
 # Prepare
 mkdir -p /etc/docker-gitlab
 curl -sSL https://raw.githubusercontent.com/hydra1983/docker-gitlab-helper/master/etc/docker-gitlab/gitlab.conf > /etc/docker-gitlab/gitlab.conf
