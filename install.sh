@@ -1,3 +1,13 @@
+# Run under root
+sudo su
+
+# Prepare
+mkdir -p /etc/docker-gitlab
+curl -sSL https://raw.githubusercontent.com/hydra1983/docker-gitlab-helper/master/etc/docker-gitlab/gitlab.conf > /etc/docker-gitlab/gitlab.conf
+
+# Modify parameters
+vi /etc/docker-gitlab/gitlab.conf
+
 # Prepare ENV
 curl -sSL https://get.docker.io/ubuntu/ | sh
 apt-get install -y --force-yes sshpass mysql-client-core-5.5 curl
