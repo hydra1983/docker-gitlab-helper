@@ -71,7 +71,7 @@ function remove_redis {
 function start_mysql {
     echo "Start MySQL"
     [[ ! -d /opt/mysql/data ]] && mkdir -p /opt/mysql/data
-    docker run --name=mysql -d -p "${MYSQL_EXPORT_SSH_PORT}":22 -p "${MYSQL_EXPORT_HTTP_PORT}":3306 -v /opt/mysql/data:/var/lib/mysql sameersbn/mysql:latest 1> /dev/null
+    docker run --name=mysql -d -e "DB_USER=${MYSQL_USERNAME}" -e "DB_PASS=${MYSQL_PASSWORD}" -e "DB_NAME=${MYSQL_DATABASE}" -p "${MYSQL_EXPORT_SSH_PORT}":22 -p "${MYSQL_EXPORT_HTTP_PORT}":3306 -v /opt/mysql/data:/var/lib/mysql sameersbn/mysql:latest 1> /dev/null
 }
 
 function stop_mysql {
