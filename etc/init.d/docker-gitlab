@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /etc/docker-gitlab/gitlab.conf
+source /etc/docker-gitlab/docker-gitlab.conf
 
 scriptfile=$(basename "$0")
 
