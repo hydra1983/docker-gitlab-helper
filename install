@@ -1,22 +1,24 @@
-# Prepare
+sudo su
+GITLAB_HOST=<host>
+JIRA_URL=https:\\/\\/<Jira url>
+
 mkdir -p /etc/docker-gitlab
 curl -sSL https://raw.githubusercontent.com/hydra1983/docker-gitlab-helper/master/etc/docker-gitlab/gitlab.conf > /etc/docker-gitlab/gitlab.conf
 
+echo "$(cat /etc/docker-gitlab/gitlab.conf | sed "s/^#GITLAB_HOST=.*$/GITLAB_HOST=${GITLAB_HOST}/")" > "/etc/docker-gitlab/gitlab.conf"
+echo "$(cat /etc/docker-gitlab/gitlab.conf | sed "s/^#JIRA_URL=.*$/JIRA_URL=${JIRA_URL}/")" > "/etc/docker-gitlab/gitlab.conf"
 
-# Prepare ENV
 curl -sSL https://get.docker.io/ubuntu/ | sh
 apt-get install -y --force-yes sshpass mysql-client-core-5.5 curl
 
 mkdir -p /opt/mysql/data
+mkdir -p /opt/redis/data
 mkdir -p /opt/gitlab/data
 
-# Initialise MySQL
 source /etc/docker-gitlab/gitlab.conf
 docker run --name=mysql -d -p 3306:3306 -e "DB_USER=${MYSQL_USERNAME}" -e "DB_PASS=${MYSQL_PASSWORD}" -e "DB_NAME=${MYSQL_DATABASE}" -v /opt/mysql/data:/var/lib/mysql sameersbn/mysql:latest
-mysql_ssh_host=`docker inspect mysql | grep IPAddres | awk -F'"' '{print $4}'`
-docker run --name=gitlab -i -t --rm --link mysql:mysql -e "DB_USER=${MYSQL_USERNAME}" -e "DB_PASS=${MYSQL_PASSWORD}" -e "DB_NAME=${MYSQL_DATABASE}" -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:${CURRENT_VERSION} app:rake gitlab:setup
-docker stop mysql
-docker rm mysql
+docker run --name=redis -v /opt/redis/data:/var/lib/redis -d sameersbn/redis:latest
+docker run --name=gitlab -d --link mysql:mysql --link redis:redisio -v /opt/gitlab/data:/home/git/data -p "${GITLAB_EXPORT_SSH_PORT}":22 -p "${GITLAB_EXPORT_HTTP_PORT}":80 -p "${GITLAB_EXPORT_HTTPS_PORT}":443 --env-file /etc/docker-gitlab/gitlab.conf sameersbn/gitlab:${CURRENT_VERSION}
 
 # Start Gitlab
 curl -sSL https://github.com/hydra1983/docker-gitlab-helper/raw/master/etc/init.d/docker-gitlab > /etc/init.d/docker-gitlab
