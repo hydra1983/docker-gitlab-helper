@@ -55,12 +55,17 @@ function gitlab_is_stopped {
 function start_redis {
     echo "Start Redis"
     [[ ! -d /opt/redis/data ]] && mkdir -p /opt/redis/data
-    docker run --name=redis -d -v /opt/redis/data:/var/lib/redis sameersbn/mysql:latest 1> /dev/null
+    docker run --name=redis -d -v /opt/redis/data:/var/lib/redis sameersbn/redis:latest 1> /dev/null
 }
 
 function stop_redis {
     echo "Stop Redis"
-    docker stop mysql 1> /dev/null
+    docker stop redis 1> /dev/null
+}
+
+function remove_redis {
+    echo "Remove Redis"
+    docker rm redis 1> /dev/null
 }
 
 function start_mysql {
@@ -82,7 +87,7 @@ function remove_mysql {
 function start_gitlab {
     echo "Start Gitlab"
     [[ ! -d /opt/gitlab/data ]] && mkdir -p /opt/gitlab/data
-    docker run --name=gitlab -d -p "${GITLAB_EXPORT_SSH_PORT}":22 -p "${GITLAB_EXPORT_HTTP_PORT}":80 -p "${GITLAB_EXPORT_HTTPS_PORT}":443 --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:"${CURRENT_VERSION}" 1> /dev/null
+    docker run --name=gitlab -d --link mysql:mysql --link redis:redisio -v /opt/gitlab/data:/home/git/data -p "${GITLAB_EXPORT_SSH_PORT}":22 -p "${GITLAB_EXPORT_HTTP_PORT}":80 -p "${GITLAB_EXPORT_HTTPS_PORT}":443 --env-file /etc/docker-gitlab/gitlab.conf sameersbn/gitlab:${CURRENT_VERSION} 1> /dev/null
 }
 
 function stop_gitlab {
@@ -96,32 +101,39 @@ function remove_gitlab {
 }
 
 function backup_gitlab {
-    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:"${CURRENT_VERSION}" app:rake gitlab:backup:create
+    docker run --name=gitlab -it --rm --link mysql:mysql --link redis:redisio --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:"${CURRENT_VERSION}" app:rake gitlab:backup:create
 }
 
 function restore_gitlab {
-    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:"${CURRENT_VERSION}" app:rake gitlab:backup:restore
+    docker run --name=gitlab -it --rm --link mysql:mysql --link redis:redisio --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:"${CURRENT_VERSION}" app:rake gitlab:backup:restore
 }
 
 function start {
     if mysql_is_stopped; then remove_mysql; fi
+    if redis_is_stopped; then remove_redis; fi
     if gitlab_is_stopped; then remove_gitlab; fi
 
     if ! mysql_is_running; then start_mysql; fi
+    if ! redis_is_running; then start_redis; fi    
     if ! gitlab_is_running; then start_gitlab; fi
 }
 
 function stop {
     if gitlab_is_running; then stop_gitlab; fi
+    if redis_is_running; then stop_redis; fi
     if mysql_is_running; then stop_mysql; fi
 
     if gitlab_is_stopped; then remove_gitlab; fi
+    if redis_is_stopped; then remove_redis; fi
     if mysql_is_stopped; then remove_mysql; fi
 }
 
 function backup {
     if mysql_is_stopped; then remove_mysql; fi
     if ! mysql_is_running; then start_mysql; fi
+
+    if redis_is_stopped; then remove_redis; fi
+    if ! redis_is_running; then start_redis; fi
 
     if gitlab_is_running; then stop_gitlab; fi
     if gitlab_is_stopped; then remove_gitlab; fi
@@ -134,6 +146,9 @@ function backup {
 function restore {
     if mysql_is_stopped; then remove_mysql; fi
     if ! mysql_is_running; then start_mysql; fi
+
+    if redis_is_stopped; then remove_redis; fi
+    if ! redis_is_running; then start_redis; fi
 
     if gitlab_is_running; then stop_gitlab; fi
     if gitlab_is_stopped; then remove_gitlab; fi
