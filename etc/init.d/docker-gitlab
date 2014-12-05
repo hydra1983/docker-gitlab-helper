@@ -4,6 +4,22 @@ source /etc/docker-gitlab/gitlab.conf
 
 scriptfile=$(basename "$0")
 
+function redis_is_running {
+    if [[ "$(docker ps | grep redis:latest)" != "" ]] ; then
+        return 0 
+    else
+        return 1
+    fi
+}
+
+function redis_is_stopped {
+    if [[ "$(docker ps | grep redis:latest)" = "" && "$(docker ps -a | grep redis)" != "" ]] ; then
+        return 0 
+    else
+        return 1
+    fi
+}
+
 function mysql_is_running {
     if [[ "$(docker ps | grep mysql:latest)" != "" ]] ; then
         return 0 
@@ -34,6 +50,17 @@ function gitlab_is_stopped {
     else
         return 1
     fi
+}
+
+function start_redis {
+    echo "Start Redis"
+    [[ ! -d /opt/redis/data ]] && mkdir -p /opt/redis/data
+    docker run --name=redis -d -v /opt/redis/data:/var/lib/redis sameersbn/mysql:latest 1> /dev/null
+}
+
+function stop_redis {
+    echo "Stop Redis"
+    docker stop mysql 1> /dev/null
 }
 
 function start_mysql {
