@@ -2,28 +2,44 @@
 
 source /etc/docker-gitlab/gitlab.conf
 
-scriptfile=$(basename $0)
+scriptfile=$(basename "$0")
 
 function mysql_is_running {
-    [[ "$(docker ps | grep mysql:latest)" != "" ]] && return 0 || return 1
+    if [[ "$(docker ps | grep mysql:latest)" != "" ]] ; then
+        return 0 
+    else
+        return 1
+    fi
 }
 
 function mysql_is_stopped {
-    [[ "$(docker ps | grep mysql:latest)" = "" && "$(docker ps -a | grep mysql)" != "" ]] && return 0 || return 1
+    if [[ "$(docker ps | grep mysql:latest)" = "" && "$(docker ps -a | grep mysql)" != "" ]] ; then
+        return 0 
+    else
+        return 1
+    fi
 }
 
 function gitlab_is_running {
-    [[ "$(docker ps | grep gitlab:$CURRENT_VERSION)" != "" ]] && return 0 || return 1
+    if [[ "$(docker ps | grep gitlab:"${CURRENT_VERSION}")" != "" ]] ; then
+        return 0 
+    else
+        return 1
+    fi
 }
 
 function gitlab_is_stopped {
-    [[ "$(docker ps | grep gitlab:$CURRENT_VERSION)" = "" && "$(docker ps -a | grep gitlab:$CURRENT_VERSION)" != "" ]] && return 0 || return 1
+    if [[ "$(docker ps | grep gitlab:"${CURRENT_VERSION}")" = "" && "$(docker ps -a | grep gitlab:"${CURRENT_VERSION}")" != "" ]] ; then
+        return 0 
+    else
+        return 1
+    fi
 }
 
 function start_mysql {
     echo "Start MySQL"
     [[ ! -d /opt/mysql/data ]] && mkdir -p /opt/mysql/data
-    docker run --name=mysql -d -p $MYSQL_EXPORT_SSH_PORT:22 -p $MYSQL_EXPORT_HTTP_PORT:3306 -v /opt/mysql/data:/var/lib/mysql sameersbn/mysql:latest 1> /dev/null
+    docker run --name=mysql -d -p "${MYSQL_EXPORT_SSH_PORT}":22 -p "${MYSQL_EXPORT_HTTP_PORT}":3306 -v /opt/mysql/data:/var/lib/mysql sameersbn/mysql:latest 1> /dev/null
 }
 
 function stop_mysql {
@@ -39,7 +55,7 @@ function remove_mysql {
 function start_gitlab {
     echo "Start Gitlab"
     [[ ! -d /opt/gitlab/data ]] && mkdir -p /opt/gitlab/data
-    docker run --name=gitlab -d -p $GITLAB_EXPORT_SSH_PORT:22 -p $GITLAB_EXPORT_HTTP_PORT:80 -p $GITLAB_EXPORT_HTTPS_PORT:443 --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$CURRENT_VERSION 1> /dev/null
+    docker run --name=gitlab -d -p "${GITLAB_EXPORT_SSH_PORT}":22 -p "${GITLAB_EXPORT_HTTP_PORT}":80 -p "${GITLAB_EXPORT_HTTPS_PORT}":443 --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:"${CURRENT_VERSION}" 1> /dev/null
 }
 
 function stop_gitlab {
@@ -53,11 +69,11 @@ function remove_gitlab {
 }
 
 function backup_gitlab {
-    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$CURRENT_VERSION app:rake gitlab:backup:create
+    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:"${CURRENT_VERSION}" app:rake gitlab:backup:create
 }
 
 function restore_gitlab {
-    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:$CURRENT_VERSION app:rake gitlab:backup:restore
+    docker run --name=gitlab -it --rm --link mysql:mysql --env-file /etc/docker-gitlab/gitlab.conf -v /opt/gitlab/data:/home/git/data sameersbn/gitlab:"${CURRENT_VERSION}" app:rake gitlab:backup:restore
 }
 
 function start {
